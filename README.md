@@ -19,3 +19,7 @@ Automates filing external lecture/activity reports on the mySNU portal. Extracts
 ### gmail-autoreply-drafter
 
 Scans the Gmail inbox for unanswered emails, researches context from Sent mail and thread history, then composes and saves draft replies in the user's voice and style. Drafts are never sent — only saved for review. For each email, it generates multiple alternative versions (e.g., accept/decline/ask for details) separated by `--` dividers, so the user can pick the best option. Matches reply language to the incoming email and uses placeholders for anything requiring the user's confirmation.
+
+### iris-assistant
+
+Proactive assistant for the IRIS R&D 업무포털 (iris.go.kr), the Korean government's integrated R&D management system. Rather than simply directing users to pages, it navigates the Nexacro-based portal via Chrome browser automation and JavaScript API calls to perform tasks on behalf of the PI (연구책임자): project registration, agreement applications/changes, research fund management, achievement registration, report submission, settlement, technology fees, and payments. All significant actions are recorded in an audit trail HTML file for accountability.
