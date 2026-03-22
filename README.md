@@ -23,3 +23,11 @@ Scans the Gmail inbox for unanswered emails, researches context from Sent mail a
 ### iris-assistant
 
 Proactive assistant for the IRIS R&D 업무포털 (iris.go.kr), the Korean government's integrated R&D management system. Rather than simply directing users to pages, it navigates the Nexacro-based portal via Chrome browser automation and JavaScript API calls to perform tasks on behalf of the PI (연구책임자): project registration, agreement applications/changes, research fund management, achievement registration, report submission, settlement, technology fees, and payments. All significant actions are recorded in an audit trail HTML file for accountability.
+
+### paper-interview
+
+Generates a podcast-style in-depth scientific interview that introduces an academic paper. Uses a multi-agent pipeline (6 specialist analysts → editor → writer) to produce a rich, engaging dialogue between a science interviewer and the paper's author. The user drops a PDF; background context is gathered via web search and PubMed. The final output is a professionally typeset PDF compiled with Typst, complete with embedded Mermaid diagrams and figures extracted from the original paper. Supports English and Korean output.
+
+### manuscript-review
+
+Runs a multi-perspective review panel on an academic manuscript draft to help authors improve it for high-impact publication. Simulates 13 specialist reviewers — from hostile same-field experts to visionary mentors — who each review the paper, discuss disagreements, and produce a synthesized improvement roadmap. Agents actively search PubMed, bioRxiv, and the web for references and context. The output is an interactive HTML report with collapsible reviewer cards, Mermaid diagrams, and a prioritized action plan.
