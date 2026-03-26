@@ -1,20 +1,19 @@
 ---
 name: manuscript-review-panel
 description: >
-  Run a multi-perspective review panel on an academic manuscript draft to help
-  authors improve it for high-impact publication. Simulates 13 specialist
-  reviewers — from hostile same-field experts to visionary mentors — who each
-  review the paper, then discuss disagreements, and produce a synthesized
-  improvement roadmap. Agents can search PubMed, bioRxiv, and the web for
-  references and context. MANDATORY TRIGGERS: manuscript review, paper review,
-  review my paper, review this manuscript, review panel, improve my paper,
+  Run a multi-perspective review panel on a manuscript draft to help authors
+  improve it for high-impact publication. Simulates 13 specialist reviewers
+  who each review the paper, discuss disagreements, and produce a synthesized
+  improvement roadmap. Agents search PubMed, bioRxiv, and the web for
+  references. MANDATORY TRIGGERS: manuscript review, paper review, review my
+  paper, review this manuscript, review panel, improve my paper,
   pre-submission review, mock peer review, reviewer feedback, review draft,
   multi-agent review, help me improve this paper, feedback on my manuscript,
-  strengthen my paper. Use this skill whenever the user uploads a manuscript
-  (PDF, DOCX, or text) and asks for review, feedback, or improvement
-  suggestions — even casually like "what do you think of this paper" or
-  "can you review this draft". Also trigger when the user wants to anticipate
-  reviewer comments, prepare for peer review, or get a pre-submission check.
+  strengthen my paper. Use when the user uploads a manuscript (PDF, DOCX, or
+  text) and asks for review, feedback, or improvement suggestions — even
+  casually like "what do you think of this paper" or "can you review this
+  draft". Also trigger for anticipating reviewer comments or pre-submission
+  checks.
 ---
 
 # Manuscript Review Panel
