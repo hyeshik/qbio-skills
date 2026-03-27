@@ -31,3 +31,7 @@ Generates a podcast-style in-depth scientific interview that introduces an acade
 ### manuscript-review
 
 Runs a multi-perspective review panel on an academic manuscript draft to help authors improve it for high-impact publication. Simulates 13 specialist reviewers — from hostile same-field experts to visionary mentors — who each review the paper, discuss disagreements, and produce a synthesized improvement roadmap. Agents actively search PubMed, bioRxiv, and the web for references and context. The output is an interactive HTML report with collapsible reviewer cards, Mermaid diagrams, and a prioritized action plan.
+
+### auto-labnote
+
+Summarizes the current Claude Code session into a structured scientific laboratory notebook entry and publishes it to a Notion database. Reads configuration (database URL, researcher name, language) from `.labnote-config.json`, then reviews the entire conversation history to compose a comprehensive lab note with sections for objective, methods, work performed, results, and next steps. Supports both English and Korean output, automatically detects whether to create a new page or update an existing one from the same day, and populates metadata from the git repository. Triggered by `/send-note` or natural-language requests like "send note" or "log this session".
