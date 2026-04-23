@@ -186,19 +186,22 @@
     )
   }
 
-  // Render the diagram scaled to fit the text column width.  If the natural
-  // diagram is wider than the column, it shrinks proportionally; narrower
-  // diagrams are left at natural size and centred.
+  // Render the diagram scaled to fit the text column width.  The diagram is
+  // ALWAYS fit within the available text column: we measure its natural width
+  // and proportionally scale down when needed, leaving a small safety margin
+  // (0.96) so fletcher's em-based internal layout can't push past the page
+  // edge during final rendering.  Never upscale — at most 1.0.
   let paper_anatomy_diagram() = layout(container => {
     let available = container.width
-    let natural = measure(_anatomy_diagram_raw)
-    let factor = if natural.width > available { available / natural.width } else { 1.0 }
-    align(center, scale(
+    let natural = measure(_anatomy_diagram_raw).width
+    let safety = 0.96
+    let factor = calc.min(1.0, (available * safety) / natural)
+    align(center, block(width: available, align(center, scale(
       factor * 100%,
       origin: top + center,
       reflow: true,
       _anatomy_diagram_raw,
-    ))
+    ))))
   })
 
   // -----------------------------------------------------------
