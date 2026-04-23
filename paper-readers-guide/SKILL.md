@@ -103,13 +103,26 @@ Skim the full body. Don't skip the supplementary if available — often the best
 
 Work the question-crafting rules above. Lay out the 8 / 8 / 4 split. For Level 1, write the correct answer first, then write 4 plausible distractors (ideally from the paper). For Level 2, make sure each question is genuinely answerable in one sentence — if the answer would run longer, trim the question. After drafting, re-read and cull anything that feels generic.
 
-### Step 4 — Fill the Typst template
+### Step 4 — Fill `paper_content.typ`
 
-Copy `assets/template.typ` to your working directory and fill in the placeholders. The template handles all styling; you mostly just replace the content in the `#let` blocks at the top.
+The skill ships with two Typst files in `assets/`:
 
-**Set `asset_dir` to the absolute path of the skill's `assets/` folder** (e.g. `#let asset_dir = "/abs/path/to/skill/assets"`). The template references the bundled illustrations (`img-cover.jpeg`, `img-roadmap.jpeg`, `img-level1.jpeg`, `img-level2.jpeg`, `img-level3.jpeg`, `img-finished.jpeg`) through that path — they appear as the cover banner, roadmap inset, each level opener, and the closing scene, giving the guide its Goonies-flavored treasure-hunt mood.
+- **`paper_content.typ`** — the _only_ file you edit per paper.  It holds the `#let` blocks for paper metadata, roadmap, the 20 questions, closing, and the paper-anatomy graph.  At the end, it calls `render_guide(...)` to hand off to the engine.  **Read and edit only this file.**
+- **`template.typ`** — the rendering engine.  Do _not_ read it into context; do _not_ edit it.  It defines the `render_guide` function, layouts, styling, localized strings, and the Fletcher anatomy renderer.
 
-**Design the paper's anatomy graph.** The template includes a Fletcher-diagram "anatomy of the paper" that sits under the reading roadmap. Do _not_ leave it as the placeholder — it must reflect _this paper's actual logical structure_. Edit `paper_anatomy_nodes` and `paper_anatomy_edges` near the top of the template. Each node declares a `kind` (one of `motivation`, `assumptions`, `logical_flow`, `experiments`, `supporting`, `evidence`, `interpretations`, `implications`, `conclusions` — multiple nodes of the same kind are allowed), a short paper-specific `label`, and a (x, y) `pos`. Edges are `(from_key, to_key)` or `(from_key, to_key, "dashed")`. Lay the graph out so the shape tells the paper's story: parallel experiment→evidence tracks converging on a supporting spine, or a linear chain, or a branching Y — whatever matches the actual argument. Keep labels ≤ ~12 words and the graph ≤ ~16 nodes so it fits on one page.
+Copy **both** files to your working directory.  Edit `paper_content.typ`, then compile it (see Step 5).
+
+Inside `paper_content.typ`, set:
+
+- `lang` — `"en"` or `"ko"`.
+- `asset_dir` — absolute path to the skill's `assets/` folder (or a relative path that resolves from the working directory).  The illustrations (`img-cover.jpeg`, `img-roadmap.jpeg`, `img-level1.jpeg`, `img-level2.jpeg`, `img-level3.jpeg`, `img-finished.jpeg`) and the SeedKRex Korean fonts live there.
+- `paper` — title, authors, venue, year, tldr.
+- `roadmap` — the reading roadmap paragraph.
+- `level1`, `level2`, `level3` — the 20 questions (8 / 8 / 4).
+- `closing` — the closing paragraph.
+- `paper_anatomy_nodes` and `paper_anatomy_edges` — see the anatomy-graph block below.
+
+**Design the paper's anatomy graph.** The anatomy diagram under the roadmap must reflect _this paper's actual logical structure_ — do not ship the placeholder.  Each node declares a `kind` (one of `motivation`, `assumptions`, `logical_flow`, `experiments`, `supporting`, `evidence`, `interpretations`, `implications`, `conclusions` — multiple nodes of the same kind are allowed), a short paper-specific `label`, and a (x, y) `pos`.  Edges are `(from_key, to_key)` or `(from_key, to_key, "dashed")`.  Lay the graph out so the shape tells the paper's story: parallel experiment→evidence tracks converging on a supporting spine, or a linear chain, or a branching Y — whatever matches the actual argument.  The renderer auto-scales the diagram down if it is wider than the text column, so you can lay out wide graphs without worrying about overflow.  Keep labels ≤ ~12 words and the graph ≤ ~18 nodes.
 
 **Important Typst syntax notes:**
 - `_word_` renders as _italic_ (single underscores).
@@ -117,7 +130,7 @@ Copy `assets/template.typ` to your working directory and fill in the placeholder
 - Never use `**word**` for bold — that's Markdown, and Typst will render the asterisks literally.
 - For emphasis of method names, concepts, or figure references in question text, use `_italic_` (the running convention in this skill).
 
-The template's question data structure:
+The question data structure:
 
 ```typst
 // Level 1 — multiple choice: include options as a 5-tuple of strings
@@ -132,15 +145,15 @@ The template's question data structure:
 (text: "Question text?", hint: none)
 ```
 
-The template has a `lang` flag (`"en"` or `"ko"`) that switches headings, how-to-use copy, and typography. Flip it to match the chosen language.
+Flip `lang` to `"ko"` for a Korean guide.  The engine switches headings, the how-to-use copy, anatomy-node labels, and the font stack (to the bundled SeedKRex family) accordingly.  Paper-specific content (TL;DR, roadmap, questions, anatomy node labels) is whatever _you_ write — follow the Korean localization rule of keeping technical/English terms in English.
 
 ### Step 5 — Compile to PDF
 
 ```bash
-python scripts/compile_guide.py <filled_template.typ> <output.pdf>
+python scripts/compile_guide.py <working_dir>/paper_content.typ <output.pdf>
 ```
 
-The compile script bundles the Korean font path automatically so Korean output renders correctly even in sandboxes without system CJK fonts.
+Compile `paper_content.typ` (not `template.typ`).  The script bundles the Korean font path automatically so Korean output renders correctly even in sandboxes without system CJK fonts.
 
 ### Step 6 — Present the PDF to the user
 
@@ -158,10 +171,12 @@ The document should feel like a well-designed game manual crossed with a scholar
 
 ## Assets and scripts
 
-- `assets/template.typ` — the fillable Typst template. Includes the three quest-box components (MC, short, open) and language switching.
-- `assets/SeedKRex-*.otf` — bundled Korean font family (Regular / Regular Italic / Bold / Bold Italic) so Korean guides render with proper Korean typography _and_ italic/bold emphasis, even in sandboxes without system CJK fonts. The template's Korean font stack is `("SeedKRex", "Lato")` — SeedKRex covers Hangul and Latin; Lato is a safety fallback.
+- `assets/paper_content.typ` — the thin, fillable content file.  Edit this per paper, compile it.  Contains only `#let` data blocks and a single `render_guide(...)` call.
+- `assets/template.typ` — the rendering engine (layouts, styling, localized strings, Fletcher anatomy renderer, quest-box components).  Exposes `render_guide(...)`.  **You do not need to read this file into context** — treat it as an opaque library.  Only edit for visual customization.
+- `assets/img-{cover,roadmap,level1,level2,level3,finished}.jpeg` — Goonies-mood illustrations for the cover, roadmap inset, level openers, and closing scene.
+- `assets/SeedKRex-*.otf` — bundled Korean font family (Regular / Regular Italic / Bold / Bold Italic) so Korean guides render with proper Korean typography _and_ italic/bold emphasis, even in sandboxes without system CJK fonts. The engine's Korean font stack is `("SeedKRex", "Lato")`.
 - `scripts/extract_pdf.py` — pulls plain text from the input PDF.
-- `scripts/compile_guide.py` — compiles the filled Typst to PDF with the bundled font path.
+- `scripts/compile_guide.py` — compiles `paper_content.typ` to PDF with the bundled font path.
 
 ## Common pitfalls to avoid
 
