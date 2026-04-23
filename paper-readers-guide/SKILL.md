@@ -107,6 +107,10 @@ Work the question-crafting rules above. Lay out the 8 / 8 / 4 split. For Level 1
 
 Copy `assets/template.typ` to your working directory and fill in the placeholders. The template handles all styling; you mostly just replace the content in the `#let` blocks at the top.
 
+**Set `asset_dir` to the absolute path of the skill's `assets/` folder** (e.g. `#let asset_dir = "/abs/path/to/skill/assets"`). The template references the bundled illustrations (`img-cover.jpeg`, `img-roadmap.jpeg`, `img-level1.jpeg`, `img-level2.jpeg`, `img-level3.jpeg`, `img-finished.jpeg`) through that path — they appear as the cover banner, roadmap inset, each level opener, and the closing scene, giving the guide its Goonies-flavored treasure-hunt mood.
+
+**Design the paper's anatomy graph.** The template includes a Fletcher-diagram "anatomy of the paper" that sits under the reading roadmap. Do _not_ leave it as the placeholder — it must reflect _this paper's actual logical structure_. Edit `paper_anatomy_nodes` and `paper_anatomy_edges` near the top of the template. Each node declares a `kind` (one of `motivation`, `assumptions`, `logical_flow`, `experiments`, `supporting`, `evidence`, `interpretations`, `implications`, `conclusions` — multiple nodes of the same kind are allowed), a short paper-specific `label`, and a (x, y) `pos`. Edges are `(from_key, to_key)` or `(from_key, to_key, "dashed")`. Lay the graph out so the shape tells the paper's story: parallel experiment→evidence tracks converging on a supporting spine, or a linear chain, or a branching Y — whatever matches the actual argument. Keep labels ≤ ~12 words and the graph ≤ ~16 nodes so it fits on one page.
+
 **Important Typst syntax notes:**
 - `_word_` renders as _italic_ (single underscores).
 - `*word*` renders as **bold** (single asterisks).

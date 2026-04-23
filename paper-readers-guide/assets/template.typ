@@ -4,9 +4,17 @@
 // further down.
 // ============================================================
 
+#import "@preview/fletcher:0.5.3" as fletcher: diagram, node, edge
+
 #let lang = "en"  // "en" or "ko"
 
 #let accent = rgb("#8B4513")  // a calm warm brown by default
+
+// Path to the folder holding the img-*.jpeg scene illustrations.  These ship
+// in the skill's ``assets/`` directory.  When copying this template outside
+// the skill, set ``asset_dir`` to the absolute path of that folder (or to a
+// relative path that resolves from this .typ file's location).
+#let asset_dir = "."
 
 #let paper = (
   title: "Paper Title Goes Here",
@@ -107,6 +115,53 @@
 ]
 
 // ============================================================
+// Paper-specific anatomy graph
+//
+// Describe the paper's actual logical structure as a directed graph.
+// Every node has:
+//   - `kind`  — one of "motivation", "assumptions", "logical_flow",
+//               "experiments", "supporting", "evidence",
+//               "interpretations", "implications", "conclusions".
+//               (Multiple nodes of the same kind are allowed — e.g. a paper
+//               may have several parallel experiment tracks, each feeding
+//               its own evidence node.)
+//   - `label` — short paper-specific text (≤ ~12 words, Typst markup ok).
+//   - `pos`   — (x, y) grid coordinate.  x grows right, y grows down.
+//               Real numbers are allowed; nothing is forced to a 3×3 grid.
+//
+// Edges are written as tuples (from_key, to_key) or (from_key, to_key, style),
+// where style is "solid" (default) or "dashed".
+//
+// Both collections can be empty for papers with no anatomy diagram, or can
+// grow arbitrarily large for papers whose argument branches across many
+// parallel lines of evidence.
+// ============================================================
+
+#let paper_anatomy_nodes = (
+  motiv:   (kind: "motivation",     pos: (2, 0),   label: "One-line open question the paper tackles."),
+  assum:   (kind: "assumptions",    pos: (0, 1.2), label: "Key assumption(s) the argument rests on."),
+  flow:    (kind: "logical_flow",   pos: (4, 1.2), label: "The paper's top-level chain of reasoning."),
+  exp:     (kind: "experiments",    pos: (2, 2.4), label: "Main experiments · separated · by · dots."),
+  evid:    (kind: "evidence",       pos: (2, 3.4), label: "Top observations that carry the paper."),
+  supp:    (kind: "supporting",     pos: (2, 4.4), label: "Critical controls/rescues tying evidence to claim."),
+  interp:  (kind: "interpretations",pos: (2, 5.4), label: "Authors' reading of what the data mean."),
+  impl:    (kind: "implications",   pos: (0, 6.6), label: "What this implies for the wider field."),
+  concl:   (kind: "conclusions",    pos: (4, 6.6), label: "The bottom-line claim."),
+)
+
+#let paper_anatomy_edges = (
+  ("motiv", "assum", "dashed"),
+  ("motiv", "flow",  "dashed"),
+  ("assum", "exp"),
+  ("flow", "interp", "dashed"),
+  ("exp", "evid"),
+  ("evid", "supp"),
+  ("supp", "interp"),
+  ("interp", "impl"),
+  ("interp", "concl"),
+)
+
+// ============================================================
 // Localized UI strings
 // ============================================================
 
@@ -116,11 +171,24 @@
     roadmap_title: "읽기 경로",
     how_to_use_title: "이 가이드 사용법",
     how_to_use: [
-      각 질문은 논문의 특정 부분을 향한 안내입니다.  Level 1은 5지선다형,
-      Level 2는 한 문장짜리 짧은 답, Level 3은 깊이 생각해 볼 열린 질문이에요.
-      정답을 평가하려는 것이 아니라, 논문을 끝까지 읽도록 끌고 가기 위한
-      quest입니다.  순서대로 풀어도 좋고, 마음에 드는 것부터 골라 풀어도 좋습니다.
+      각 질문은 논문 속 한 지점을 가리키는 이정표입니다. Level 1은 다섯 개의
+      보기에서 정답을 고르는 객관식, Level 2는 한 문장으로 답하는 짧은 질문,
+      Level 3은 깊이 곱씹어 볼 만한 열린 질문입니다. 정답을 채점하려는
+      시험이 아니라, 논문을 처음부터 끝까지 따라가며 읽도록 이끌어 주는
+      quest이니, 순서대로 풀어도 좋고 마음 가는 것부터 골라 풀어도 좋습니다.
     ],
+    anatomy_title: "논문의 골격",
+    anatomy_labels: (
+      motivation: "동기",
+      assumptions: "핵심 가정",
+      logical_flow: "논리 전개",
+      experiments: "실험",
+      supporting: "뒷받침 논리",
+      evidence: "근거",
+      interpretations: "해석",
+      implications: "함의",
+      conclusions: "결론",
+    ),
     closing_title: "마치며",
     authors_prefix: "저자",
     venue_prefix: "출처",
@@ -137,6 +205,18 @@
       designed to pull you through the paper end to end.  Work them in order,
       or pick the ones that catch your eye.
     ],
+    anatomy_title: "Anatomy of the paper",
+    anatomy_labels: (
+      motivation: "Motivation",
+      assumptions: "Key Assumptions",
+      logical_flow: "Logical Flow",
+      experiments: "Experiments",
+      supporting: "Logical Supporting",
+      evidence: "Evidence",
+      interpretations: "Interpretations",
+      implications: "Implications",
+      conclusions: "Conclusions",
+    ),
     closing_title: "Closing",
     authors_prefix: "Authors",
     venue_prefix: "Venue",
@@ -190,6 +270,105 @@
 #show heading.where(level: 2): it => {
   set text(size: 13pt, weight: "semibold")
   block(above: 1.4em, below: 0.6em, it.body)
+}
+
+// ============================================================
+// Paper-anatomy diagram — a 3×3 Fletcher diagram that sits under the
+// reading roadmap.  Three columns group the paper's elements:
+//   Framing   → Motivation     · Key Assumptions  · Logical Flow
+//   Argument  → Experiments    · Logical Support. · Evidence
+//   Takeaway  → Interpretations· Implications     · Conclusions
+// Vertical arrows carry each framing element into its argument element
+// and then down to its takeaway; horizontal edges show co-dependence
+// (dashed at the top, flow arrows at the bottom).  Roughly 4:3.
+// ============================================================
+
+// Subtle per-kind fill tints keep all nodes in the same warm palette while
+// letting the reader's eye group together nodes of the same role.
+#let _kind_fill(kind) = {
+  let k = kind
+  if k == "motivation"            { accent.lighten(78%) }
+  else if k == "logical_flow"     { accent.lighten(82%) }
+  else if k == "assumptions"      { accent.lighten(86%) }
+  else if k == "experiments"      { accent.lighten(93%) }
+  else if k == "evidence"         { accent.lighten(90%) }
+  else if k == "supporting"       { accent.lighten(84%) }
+  else if k == "interpretations"  { accent.lighten(80%) }
+  else if k == "implications"     { accent.lighten(84%) }
+  else if k == "conclusions"      { accent.lighten(70%) }
+  else                            { accent.lighten(90%) }
+}
+
+// Render a single node given its spec (dict with `kind`, `label`, `pos`).
+// Header line: uppercase role tag from `ui.anatomy_labels`.
+// Body line:   paper-specific text from `label`, evaluated as Typst markup
+// so that _italics_ and *bold* work inside node content.
+#let _anatomy_node_dyn(spec) = {
+  let header = ui.anatomy_labels.at(spec.kind)
+  node(
+    spec.pos,
+    box(width: 7em, {
+      set par(justify: false, leading: 0.42em)
+      align(center, text(size: 6.5pt, weight: "bold", tracking: 0.8pt, fill: accent,
+        hyphenate: false, upper(eval(header, mode: "markup"))))
+      v(0.25em)
+      align(center, text(size: 7pt, eval(spec.label, mode: "markup")))
+    }),
+    inset: 4.5pt,
+    stroke: 0.6pt + accent.lighten(20%),
+    fill: _kind_fill(spec.kind),
+    corner-radius: 3.5pt,
+    shape: rect,
+  )
+}
+
+// Build the diagram from `paper_anatomy_nodes` and `paper_anatomy_edges`.
+// The structure — which nodes exist, how they connect — is paper-specific.
+#let paper_anatomy_diagram() = {
+  let nodes = paper_anatomy_nodes
+  let edges = paper_anatomy_edges
+
+  let node_args  = nodes.values().map(_anatomy_node_dyn)
+  let edge_args  = edges.map(e => {
+    let from_pos = nodes.at(e.at(0)).pos
+    let to_pos   = nodes.at(e.at(1)).pos
+    let style    = if e.len() > 2 { e.at(2) } else { "solid" }
+    if style == "dashed" {
+      edge(from_pos, to_pos, "->", stroke: (paint: accent.lighten(30%), thickness: 0.5pt, dash: "dashed"))
+    } else {
+      edge(from_pos, to_pos, "->", stroke: 0.6pt + accent.lighten(20%))
+    }
+  })
+
+  align(center, diagram(
+    spacing: (1.0em, 2.0em),
+    node-outset: 2pt,
+    ..node_args,
+    ..edge_args,
+  ))
+}
+
+// ============================================================
+// Scene-illustration helper
+//
+// Renders a landscape scene image with a thin warm frame and light top/bottom
+// breathing space — enough to sit inside the flow of typography without
+// reading as a standalone plate.  Used by the cover banner, each level
+// opener, the roadmap inset, and the closing.
+// ============================================================
+
+#let scene(name, width: 100%, height: none) = {
+  let img = if height == none {
+    image(asset_dir + "/" + name, width: width)
+  } else {
+    image(asset_dir + "/" + name, height: height)
+  }
+  box(
+    stroke: 0.4pt + accent.lighten(55%),
+    clip: true,
+    radius: 6pt,
+    img,
+  )
 }
 
 // ============================================================
@@ -305,10 +484,19 @@
   )
 }
 
-#let level1_block(level, start_num) = {
-  heading(level: 1, level.name)
-  text(fill: luma(45%), style: "italic", level.intro)
+// Section opener: image banner, heading sitting tight below it, italic intro.
+// Kept as a non-breaking unit so the illustration never separates from its
+// heading across a page break.
+#let _level_opener(img_name, name, intro) = block(breakable: false, {
+  scene(img_name)
+  v(20pt)
+  heading(level: 1, name)
+  text(fill: luma(45%), style: "italic", intro)
   v(0.4em)
+})
+
+#let level1_block(level, start_num) = {
+  _level_opener("img-level1.jpeg", level.name, level.intro)
   for (i, q) in level.questions.enumerate() {
     quest_mc(
       start_num + i,
@@ -320,9 +508,7 @@
 }
 
 #let level2_block(level, start_num) = {
-  heading(level: 1, level.name)
-  text(fill: luma(45%), style: "italic", level.intro)
-  v(0.4em)
+  _level_opener("img-level2.jpeg", level.name, level.intro)
   for (i, q) in level.questions.enumerate() {
     quest_short(
       start_num + i,
@@ -333,9 +519,7 @@
 }
 
 #let level3_block(level, start_num) = {
-  heading(level: 1, level.name)
-  text(fill: luma(45%), style: "italic", level.intro)
-  v(0.4em)
+  _level_opener("img-level3.jpeg", level.name, level.intro)
   for (i, q) in level.questions.enumerate() {
     quest_open(
       start_num + i,
@@ -349,17 +533,26 @@
 // Cover block
 // ============================================================
 
-#align(center)[
-  #text(size: 10pt, fill: accent, weight: "bold", tracking: 1.5pt, upper(ui.cover_kicker))
-  #v(0.6em)
-  #text(size: 22pt, weight: "bold", paper.title)
-  #v(0.4em)
-  #text(size: 11pt, fill: luma(40%))[
+#align(center, block(width: 100%, {
+  set par(justify: false, leading: 0.5em)
+  text(size: 10pt, fill: accent, weight: "bold", tracking: 1.5pt, upper(ui.cover_kicker))
+  v(0.6em)
+  text(size: 22pt, weight: "bold", paper.title)
+  v(0.4em)
+  text(size: 11pt, fill: luma(40%))[
     #paper.authors · #paper.venue · #paper.year
   ]
-]
+}))
 
-#v(1.2em)
+#v(0.8em)
+
+// Cover banner: the party at the mouth of the paper-grotto.  Sized to slot
+// between the title block and the TL;DR without any separator — it reads as
+// part of the masthead rather than a plated illustration.
+#scene("img-cover.jpeg")
+
+#v(0.6em)
+
 #block(
   fill: luma(96%),
   inset: 14pt,
@@ -368,19 +561,31 @@
   {
     set par(leading: 0.7em)
     set text(size: 11pt)
-    paper.tldr
+    eval(paper.tldr, mode: "markup")
   },
 )
 
-#v(1.2em)
+#v(1.0em)
 
 // How to use
 #heading(level: 2, ui.how_to_use_title)
 #ui.how_to_use
 
-// Roadmap
+// Roadmap — text on the left, the map-cabin scene on the right as a running
+// marginal illustration.  The two columns share a top edge with the heading
+// so the image sits inside the paragraph rather than alongside it.
 #heading(level: 2, ui.roadmap_title)
+#scene("img-roadmap.jpeg")
+#v(0.8em)
 #roadmap
+
+#v(0.8em)
+
+// Paper-anatomy diagram: shows how the pieces of a paper hang together.
+// Sits directly under the roadmap, visually extending the "how to read"
+// guidance into a "what's inside" schematic.
+#heading(level: 2, ui.anatomy_title)
+#paper_anatomy_diagram()
 
 #v(0.8em)
 
@@ -403,4 +608,6 @@
 
 #v(1.5em)
 #heading(level: 2, ui.closing_title)
+#scene("img-finished.jpeg")
+#v(0.8em)
 #closing

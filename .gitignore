@@ -1,1 +1,19 @@
 paper-readers-guide/evals/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Editors
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Build / scratch
+*.log
+*.tmp
