@@ -56,6 +56,59 @@ VALID_KINDS = {
 }
 
 
+SCHEMA_REFERENCE = """\
+paper reader's guide — content.json schema
+==========================================
+
+Top-level keys (all required unless noted):
+
+  lang          : "en" | "ko"
+  asset_dir     : string path to the skill's assets/ folder
+                  (may be overridden with --asset-dir; build_guide.py
+                  sets this automatically, so you can leave it as ".")
+  paper         : { title, authors, venue, year, tldr }
+                  strings; tldr accepts Typst markup
+  roadmap       : string (Typst markup allowed)
+  level1        : { name, intro, questions: [ ... 8 items ... ] }
+  level2        : { name, intro, questions: [ ... 8 items ... ] }
+  level3        : { name, intro, questions: [ ... 4 items ... ] }
+  closing       : string (Typst markup allowed)
+  paper_anatomy : { nodes: { ... }, edges: [ ... ] }
+
+Question objects:
+
+  Level 1 (multiple choice):
+    { "text": "...", "options": ["a","b","c","d","e"], "hint": null }
+    — exactly 5 options; hint is null or a short string.
+
+  Level 2 (short answer):
+    { "text": "...", "hint": null }
+
+  Level 3 (open reflection):
+    { "text": "...", "hint": null }
+
+Anatomy graph:
+
+  nodes: { key: { kind, pos: [x, y], label } }
+    kind ∈ { motivation, assumptions, logical_flow, experiments,
+             supporting, evidence, interpretations, implications,
+             conclusions }
+    (multiple nodes of the same kind are allowed)
+    pos: [x, y] in grid units; floats allowed; x→right, y→down
+    label: short string (Typst markup allowed)
+
+  edges: list of [from_key, to_key] or [from_key, to_key, "dashed"]
+
+Typst markup in text fields (tldr, roadmap, closing, question text,
+option strings, hint, anatomy labels):
+  _word_  → italic
+  *word*  → bold
+  Never use **word** — that's Markdown, not Typst.
+
+For a filled-in example, see assets/content_example.json.
+"""
+
+
 # ---------------------------------------------------------------------------
 # Typst value emitters
 # ---------------------------------------------------------------------------
@@ -325,11 +378,31 @@ def validate_counts(content: dict) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("json", type=Path, help="Input content.json")
-    ap.add_argument("output", type=Path, help="Path to write the filled .typ file")
+    ap.add_argument("json", type=Path, nargs="?", help="Input content.json")
+    ap.add_argument("output", type=Path, nargs="?", help="Path to write the filled .typ file")
+    ap.add_argument(
+        "--asset-dir",
+        type=str,
+        default=None,
+        help="Override the content's asset_dir (absolute path preferred).",
+    )
+    ap.add_argument(
+        "--print-schema",
+        action="store_true",
+        help="Print the JSON schema reference to stdout and exit.",
+    )
     args = ap.parse_args()
 
+    if args.print_schema:
+        sys.stdout.write(SCHEMA_REFERENCE)
+        return
+
+    if args.json is None or args.output is None:
+        ap.error("json and output are required unless --print-schema is used")
+
     content = json.loads(args.json.read_text(encoding="utf-8"))
+    if args.asset_dir is not None:
+        content["asset_dir"] = args.asset_dir
     validate_counts(content)
 
     typ_source = render_typ(content)

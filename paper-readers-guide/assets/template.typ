@@ -6,7 +6,7 @@
 // full typeset document.  Called from `paper_content.typ`.
 // ============================================================
 
-#import "@preview/fletcher:0.5.3" as fletcher: diagram, node, edge
+#import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
 
 #let accent = rgb("#8B4513")  // warm brown accent
 
@@ -186,16 +186,19 @@
     )
   }
 
-  // Render the diagram scaled to fit the text column width.  The diagram is
-  // ALWAYS fit within the available text column: we measure its natural width
-  // and proportionally scale down when needed, leaving a small safety margin
-  // (0.96) so fletcher's em-based internal layout can't push past the page
-  // edge during final rendering.  Never upscale — at most 1.0.
-  let paper_anatomy_diagram() = layout(container => {
+  // Render the diagram centred, scaled to fit the text column width.
+  // ``context`` gives us access to the available column via ``layout``,
+  // and ``measure`` now works once the fletcher layout has stabilised.
+  let paper_anatomy_diagram() = layout(container => context {
     let available = container.width
-    let natural = measure(_anatomy_diagram_raw).width
+    let m = measure(_anatomy_diagram_raw)
+    let natural = m.width
     let safety = 0.96
-    let factor = calc.min(1.0, (available * safety) / natural)
+    let factor = if natural == 0pt {
+      1.0
+    } else {
+      calc.min(1.0, (available * safety) / natural)
+    }
     align(center, block(width: available, align(center, scale(
       factor * 100%,
       origin: top + center,
