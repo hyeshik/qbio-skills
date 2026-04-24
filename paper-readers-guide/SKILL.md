@@ -40,9 +40,9 @@ Use the `AskUserQuestion` tool (not prose) with two options: **English** and **K
 
 If **Korean** is selected: all **technical and academic terms stay in English** — method names, gene/protein names, statistical terms (p-value, ROC, …), model/dataset names, jargon (CRISPR, transformer, …). Only prose connectors and quest narration are Korean. See `references/korean_localization.md` for examples.
 
-### Step 2 — Delegate paper reading to a subagent
+### Step 2 — Delegate paper reading to a subagent (call exactly once)
 
-**Do not `Read` the full paper yourself.** Papers run 30–100k tokens; loading one into your own context inflates every downstream step. Instead, extract the paper and hand it to a subagent that returns a compact digest.
+**Do not `Read` the full paper yourself.** Papers run 30–100k tokens; loading one into your own context inflates every downstream step. Instead, extract the paper and hand it to a subagent that writes a compact digest to disk.
 
 First, extract the paper to markdown (uses `markitdown`, which preserves headings, lists, and tables better than a plain text dump):
 
@@ -50,7 +50,13 @@ First, extract the paper to markdown (uses `markitdown`, which preserves heading
 python scripts/extract_pdf.py <paper.pdf> > <working_dir>/paper.md
 ```
 
-Then spawn a subagent via the `Agent` tool (general-purpose subagent is fine). Give it the path to `paper.md` and ask it to return a **paper digest** with exactly these sections, in plain text under ~600 lines total:
+Then spawn a subagent **once** via the `Agent` tool (general-purpose subagent is fine). Instruct it to:
+
+1. Read `<working_dir>/paper.md` (and the supplementary sections if present).
+2. Write the digest to `<working_dir>/paper_digest.md` using the section shape below.
+3. Return only a short confirmation — e.g. `"wrote paper_digest.md, N sections, M bytes"`. The digest itself should stay on disk, not flow back through the subagent's response.
+
+The digest must have exactly these sections, in plain Markdown under ~600 lines total:
 
 1. **One-paragraph TL;DR** — what the paper claims and why it matters. No spoilers worth more than a sentence.
 2. **Key numbers** — 10–20 numeric facts with ≤10 words of context each (used for L1 numeric distractors and correct answers). Format: `value · context · location`.
@@ -61,7 +67,16 @@ Then spawn a subagent via the `Agent` tool (general-purpose subagent is fine). G
 7. **Prior-work anchors** — 3–6 references the paper frames itself against, with one-line "what this paper says about them".
 8. **Paper anatomy skeleton** — a proposed node+edge layout for the anatomy graph (see Step 4 schema for node `kind` values and the edge format). The subagent suggests the structure; you refine it in Step 4.
 
-Tell the subagent to be _specific and concrete_ (cite §/figure numbers, exact numeric values, exact phrasings of claims) and to include supplementary material if present. You will use the digest as the sole input to Steps 3 and 4 — the raw paper never enters your context.
+Tell the subagent to be _specific and concrete_ (cite §/figure numbers, exact numeric values, exact phrasings of claims) and to include supplementary material if present.
+
+**Token-cost rules — follow these strictly.**
+
+- **Call the subagent exactly once per paper.** Every fresh `Agent` call re-reads the entire paper — the paper tokens are billed again on the subagent side each time. One comprehensive digest is far cheaper than three narrow ones.
+- **Use the digest file as the canonical artifact.** `Read` `paper_digest.md` when you need it, and let your own context drop it between turns; re-reading a local file is free compared to re-spawning the subagent.
+- **If the digest lacks a specific detail, don't re-spawn the subagent.** Use `Grep` on `paper.md` for the exact term, then `Read` only the matching line range. This costs you a few hundred tokens instead of another full-paper pass.
+- **Only spawn a second subagent as a last resort**, e.g. when the paper's actual structure turns out to be very different from what the first digest assumed. If you do, ask it to _append_ to `paper_digest.md` rather than start over.
+
+You will use the digest as the sole input to Steps 3 and 4 — the raw paper never enters your context.
 
 ### Step 3 — Draft the 20 questions
 
