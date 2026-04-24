@@ -1,61 +1,71 @@
 #!/usr/bin/env python3
-"""Extract plain text from a PDF so the skill can read the paper's content.
+"""Extract text from a PDF so the skill can read the paper's content.
 
 Usage:
     python extract_pdf.py <paper.pdf> [--pages N]
 
-Writes plain text to stdout.  Tries pdftotext first (fast, layout-preserving),
-falls back to pypdf if pdftotext is not on the PATH.
+Writes Markdown-formatted text to stdout.  Uses Microsoft's ``markitdown``
+library, which preserves headings, lists, and table structure better than a
+plain text dump — auto-installs the package on first use if needed.
 """
 
 from __future__ import annotations
 
 import argparse
-import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 
-def extract_with_pdftotext(path: Path) -> str:
-    # -layout preserves column structure reasonably well for most papers.
-    out = subprocess.run(
-        ["pdftotext", "-layout", str(path), "-"],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return out.stdout
-
-
-def extract_with_pypdf(path: Path) -> str:
+def ensure_markitdown():
     try:
-        from pypdf import PdfReader
+        from markitdown import MarkItDown  # type: ignore
     except ImportError:
         subprocess.run(
-            [sys.executable, "-m", "pip", "install", "pypdf", "--break-system-packages"],
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "markitdown[pdf]",
+                "--break-system-packages",
+            ],
             check=True,
             capture_output=True,
         )
-        from pypdf import PdfReader  # type: ignore
-    reader = PdfReader(str(path))
-    return "\n\n".join(page.extract_text() or "" for page in reader.pages)
+        from markitdown import MarkItDown  # type: ignore
+    return MarkItDown
+
+
+def extract_with_markitdown(path: Path) -> str:
+    MarkItDown = ensure_markitdown()
+    md = MarkItDown()
+    result = md.convert(str(path))
+    # markitdown returns an object whose ``.text_content`` is the extracted text.
+    text = getattr(result, "text_content", None)
+    if text is None:
+        # Older versions expose ``.markdown`` instead.
+        text = getattr(result, "markdown", "")
+    return text or ""
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("pdf", type=Path)
-    ap.add_argument("--pages", type=int, default=None,
-                    help="Only return the first N pages of extracted text.")
+    ap.add_argument(
+        "--pages",
+        type=int,
+        default=None,
+        help="Only return the first N pages of extracted text "
+        "(heuristic, based on form-feed characters if present).",
+    )
     args = ap.parse_args()
 
-    if shutil.which("pdftotext"):
-        text = extract_with_pdftotext(args.pdf)
-    else:
-        text = extract_with_pypdf(args.pdf)
+    text = extract_with_markitdown(args.pdf)
 
     if args.pages is not None:
-        # crude page split — pdftotext uses form-feed between pages.
+        # Best-effort page split: markitdown typically does not insert form
+        # feeds, so this is only useful for sources that do.
         pages = text.split("\x0c")
         text = "\x0c".join(pages[: args.pages])
 

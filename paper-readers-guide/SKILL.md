@@ -86,10 +86,10 @@ If **Korean** is selected: all **technical and academic terms stay in English**.
 
 ### Step 2 — Read the paper
 
-Extract the text of the PDF so you can identify the real content to hunt for. Use the bundled helper:
+Extract the text of the PDF so you can identify the real content to hunt for. Use the bundled helper (which uses Microsoft's `markitdown` under the hood — it preserves headings, lists, and table structure better than a plain text dump):
 
 ```bash
-python scripts/extract_pdf.py <paper.pdf> > /tmp/paper.txt
+python scripts/extract_pdf.py <paper.pdf> > /tmp/paper.md
 ```
 
 Read it carefully enough to find:
@@ -103,57 +103,99 @@ Skim the full body. Don't skip the supplementary if available — often the best
 
 Work the question-crafting rules above. Lay out the 8 / 8 / 4 split. For Level 1, write the correct answer first, then write 4 plausible distractors (ideally from the paper). For Level 2, make sure each question is genuinely answerable in one sentence — if the answer would run longer, trim the question. After drafting, re-read and cull anything that feels generic.
 
-### Step 4 — Fill `paper_content.typ`
+### Step 4 — Write the content JSON
 
-The skill ships with two Typst files in `assets/`:
+You do **not** edit any Typst files per paper. Instead, author a single JSON file (`content.json`) that describes the paper-specific content — metadata, roadmap, the 20 questions, closing, and the anatomy graph. A Python script turns it into a filled Typst file; the template is never loaded into your context.
 
-- **`paper_content.typ`** — the _only_ file you edit per paper.  It holds the `#let` blocks for paper metadata, roadmap, the 20 questions, closing, and the paper-anatomy graph.  At the end, it calls `render_guide(...)` to hand off to the engine.  **Read and edit only this file.**
-- **`template.typ`** — the rendering engine.  Do _not_ read it into context; do _not_ edit it.  It defines the `render_guide` function, layouts, styling, localized strings, and the Fletcher anatomy renderer.
+**Minimal schema** (see `assets/content_example.json` for a filled-out placeholder):
 
-Copy **both** files to your working directory.  Edit `paper_content.typ`, then compile it (see Step 5).
-
-Inside `paper_content.typ`, set:
-
-- `lang` — `"en"` or `"ko"`.
-- `asset_dir` — absolute path to the skill's `assets/` folder (or a relative path that resolves from the working directory).  The illustrations (`img-cover.jpeg`, `img-roadmap.jpeg`, `img-level1.jpeg`, `img-level2.jpeg`, `img-level3.jpeg`, `img-finished.jpeg`) and the SeedKRex Korean fonts live there.
-- `paper` — title, authors, venue, year, tldr.
-- `roadmap` — the reading roadmap paragraph.
-- `level1`, `level2`, `level3` — the 20 questions (8 / 8 / 4).
-- `closing` — the closing paragraph.
-- `paper_anatomy_nodes` and `paper_anatomy_edges` — see the anatomy-graph block below.
-
-**Design the paper's anatomy graph.** The anatomy diagram under the roadmap must reflect _this paper's actual logical structure_ — do not ship the placeholder.  Each node declares a `kind` (one of `motivation`, `assumptions`, `logical_flow`, `experiments`, `supporting`, `evidence`, `interpretations`, `implications`, `conclusions` — multiple nodes of the same kind are allowed), a short paper-specific `label`, and a (x, y) `pos`.  Edges are `(from_key, to_key)` or `(from_key, to_key, "dashed")`.  Lay the graph out so the shape tells the paper's story: parallel experiment→evidence tracks converging on a supporting spine, or a linear chain, or a branching Y — whatever matches the actual argument.  The renderer auto-scales the diagram down if it is wider than the text column, so you can lay out wide graphs without worrying about overflow.  Keep labels ≤ ~12 words and the graph ≤ ~18 nodes.
-
-**Important Typst syntax notes:**
-- `_word_` renders as _italic_ (single underscores).
-- `*word*` renders as **bold** (single asterisks).
-- Never use `**word**` for bold — that's Markdown, and Typst will render the asterisks literally.
-- For emphasis of method names, concepts, or figure references in question text, use `_italic_` (the running convention in this skill).
-
-The question data structure:
-
-```typst
-// Level 1 — multiple choice: include options as a 5-tuple of strings
-(text: "Question text?",
- options: ("Distractor", "Correct answer", "Distractor", "Distractor", "Distractor"),
- hint: none)
-
-// Level 2 — short answer: text only
-(text: "Question text?", hint: none)
-
-// Level 3 — open reflection: text only
-(text: "Question text?", hint: none)
+```json
+{
+  "lang": "en",
+  "asset_dir": "<absolute path to the skill's assets/ folder>",
+  "paper": {
+    "title": "...",
+    "authors": "...",
+    "venue": "...",
+    "year": "...",
+    "tldr": "2-3 sentence teaser (Typst markup allowed)"
+  },
+  "roadmap": "Reading roadmap paragraph (Typst markup allowed)",
+  "level1": {
+    "name": "Level 1 — Scout the Terrain",
+    "intro": "Eight multiple-choice quests that pull you across the paper...",
+    "questions": [
+      {
+        "text": "Question text? (Typst markup allowed)",
+        "options": ["Distractor", "Correct", "Distractor", "Distractor", "Distractor"],
+        "hint": null
+      }
+      /* ... 8 total ... */
+    ]
+  },
+  "level2": {
+    "name": "Level 2 — Decode the Map",
+    "intro": "Eight short-answer quests...",
+    "questions": [
+      { "text": "...", "hint": null }
+      /* ... 8 total ... */
+    ]
+  },
+  "level3": {
+    "name": "Level 3 — Face the Dragon",
+    "intro": "Four open-ended provocations...",
+    "questions": [
+      { "text": "...", "hint": null }
+      /* ... 4 total ... */
+    ]
+  },
+  "closing": "Closing paragraph (Typst markup allowed)",
+  "paper_anatomy": {
+    "nodes": {
+      "key1": { "kind": "motivation", "pos": [2, 0], "label": "..." }
+      /* more nodes ... */
+    },
+    "edges": [
+      ["key1", "key2"],
+      ["key1", "key3", "dashed"]
+    ]
+  }
+}
 ```
 
-Flip `lang` to `"ko"` for a Korean guide.  The engine switches headings, the how-to-use copy, anatomy-node labels, and the font stack (to the bundled SeedKRex family) accordingly.  Paper-specific content (TL;DR, roadmap, questions, anatomy node labels) is whatever _you_ write — follow the Korean localization rule of keeping technical/English terms in English.
+Rules:
 
-### Step 5 — Compile to PDF
+- `lang` — `"en"` or `"ko"`.
+- `asset_dir` — absolute path (or working-dir-relative) to the skill's `assets/` folder. The illustrations (`img-cover.jpeg`, `img-roadmap.jpeg`, `img-level1.jpeg`, `img-level2.jpeg`, `img-level3.jpeg`, `img-finished.jpeg`) and the SeedKRex Korean fonts live there.
+- `options` — exactly five strings for every Level 1 question.
+- `hint` — either `null` or a short string.
+- `paper_anatomy.nodes[*].kind` — one of `motivation`, `assumptions`, `logical_flow`, `experiments`, `supporting`, `evidence`, `interpretations`, `implications`, `conclusions`. Multiple nodes of the same kind are allowed.
+- `paper_anatomy.nodes[*].pos` — `[x, y]` in grid units (reals are fine); x grows right, y grows down.
+- `paper_anatomy.edges[*]` — `[from_key, to_key]` for a solid edge, or `[from_key, to_key, "dashed"]` for a dashed edge.
+
+**Design the paper's anatomy graph.** The anatomy diagram under the roadmap must reflect _this paper's actual logical structure_ — do not ship a placeholder. Lay the graph out so the shape tells the paper's story: parallel experiment→evidence tracks converging on a supporting spine, a linear chain, or a branching Y — whatever matches the actual argument. The renderer auto-scales the diagram down if it is wider than the text column, so wide graphs are fine. Keep labels ≤ ~12 words and the graph ≤ ~18 nodes.
+
+**Typst markup in text fields.** `tldr`, `roadmap`, `closing`, every question `text`, each option string, every `hint`, and each anatomy node `label` are passed through Typst's markup evaluator, so you can use:
+
+- `_word_` → _italic_ (single underscores).
+- `*word*` → **bold** (single asterisks).
+
+Never use `**word**` for bold — that's Markdown, and Typst will render the asterisks literally. For emphasis of method names, concepts, or figure references in question text, use `_italic_` (the running convention in this skill).
+
+Flip `lang` to `"ko"` for a Korean guide. The engine switches headings, the how-to-use copy, anatomy-node kind labels, and the font stack (to the bundled SeedKRex family) accordingly. Paper-specific content (TL;DR, roadmap, questions, anatomy node labels) is whatever _you_ write — follow the Korean localization rule of keeping technical/English terms in English.
+
+### Step 5 — Render the Typst file, then compile to PDF
+
+Two commands: first render the JSON into a filled `paper_content.typ`, then compile it. Write both outputs into your working directory.
 
 ```bash
+python scripts/render_content.py <working_dir>/content.json <working_dir>/paper_content.typ
 python scripts/compile_guide.py <working_dir>/paper_content.typ <output.pdf>
 ```
 
-Compile `paper_content.typ` (not `template.typ`).  The script bundles the Korean font path automatically so Korean output renders correctly even in sandboxes without system CJK fonts.
+`render_content.py` also prints a warning if the 8/8/4 question split is off. The generated `paper_content.typ` does `#import "./template.typ"`, so copy `assets/template.typ` into the same working directory beside it before calling `compile_guide.py`.
+
+The `compile_guide.py` script bundles the Korean font path automatically so Korean output renders correctly even in sandboxes without system CJK fonts.
 
 ### Step 6 — Present the PDF to the user
 
@@ -171,12 +213,13 @@ The document should feel like a well-designed game manual crossed with a scholar
 
 ## Assets and scripts
 
-- `assets/paper_content.typ` — the thin, fillable content file.  Edit this per paper, compile it.  Contains only `#let` data blocks and a single `render_guide(...)` call.
-- `assets/template.typ` — the rendering engine (layouts, styling, localized strings, Fletcher anatomy renderer, quest-box components).  Exposes `render_guide(...)`.  **You do not need to read this file into context** — treat it as an opaque library.  Only edit for visual customization.
+- `assets/content_example.json` — a filled-out placeholder JSON showing the exact structure the renderer expects. Use it as the schema reference when authoring `content.json`.
+- `assets/template.typ` — the rendering engine (layouts, styling, localized strings, Fletcher anatomy renderer, quest-box components). Exposes `render_guide(...)`. **You do not need to read this file into context** — treat it as an opaque library. Copy it next to the generated `paper_content.typ` so the relative import resolves. Only edit for visual customization.
 - `assets/img-{cover,roadmap,level1,level2,level3,finished}.jpeg` — Goonies-mood illustrations for the cover, roadmap inset, level openers, and closing scene.
 - `assets/SeedKRex-*.otf` — bundled Korean font family (Regular / Regular Italic / Bold / Bold Italic) so Korean guides render with proper Korean typography _and_ italic/bold emphasis, even in sandboxes without system CJK fonts. The engine's Korean font stack is `("SeedKRex", "Lato")`.
-- `scripts/extract_pdf.py` — pulls plain text from the input PDF.
-- `scripts/compile_guide.py` — compiles `paper_content.typ` to PDF with the bundled font path.
+- `scripts/extract_pdf.py` — pulls Markdown-formatted text from the input PDF using `markitdown`.
+- `scripts/render_content.py` — turns a `content.json` into a filled `paper_content.typ`. Keeps the Typst template out of your model context.
+- `scripts/compile_guide.py` — compiles the generated `paper_content.typ` to PDF with the bundled font path.
 
 ## Common pitfalls to avoid
 
@@ -189,3 +232,4 @@ The document should feel like a well-designed game manual crossed with a scholar
 - **Level 3 that isn't actually critical.** "How would you extend this work?" is weaker than "Figure 4's claim rests on an assumption stated only in §2.1 — is it actually defensible?"
 - **Translating technical terms in Korean output.** Never "단백질 접힘" for "protein folding" if the paper uses "protein folding". Keep the English term and only translate the connective tissue.
 - **Using `*` for italic in Typst.** It's bold. Use `_word_` for italic.
+- **Trying to edit `paper_content.typ` directly.** Don't. Edit the JSON and re-run `scripts/render_content.py`. The generated Typst file is overwritten on every render.

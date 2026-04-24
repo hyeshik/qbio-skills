@@ -1,0 +1,75 @@
+{
+  "lang": "en",
+  "asset_dir": ".",
+  "paper": {
+    "title": "Paper Title Goes Here",
+    "authors": "Authors, et al.",
+    "venue": "Venue / Journal",
+    "year": "Year",
+    "tldr": "A 2-3 sentence teaser that makes the reader want to dig in, without spoiling the main result."
+  },
+  "roadmap": "Start with the _abstract_ and the first two paragraphs of the _introduction_ to lock in the motivation. Then flip forward to _Figure 1_ and read its caption slowly — it usually frames the whole story. Skim _methods_ once, come back to it after you understand the results. Read _results_ in the order the figures appear, pausing at each figure before reading the paragraph that describes it. Read the _discussion_ carefully — the authors' honest framing lives there.",
+  "level1": {
+    "name": "Level 1 — Scout the Terrain",
+    "intro": "Eight multiple-choice quests that pull you across the paper — pick the option the paper actually supports.",
+    "questions": [
+      {"text": "Placeholder Level-1 question 1?", "options": ["Option A", "Option B", "Option C", "Option D", "Option E"], "hint": null},
+      {"text": "Placeholder Level-1 question 2?", "options": ["Option A", "Option B", "Option C", "Option D", "Option E"], "hint": null},
+      {"text": "Placeholder Level-1 question 3?", "options": ["Option A", "Option B", "Option C", "Option D", "Option E"], "hint": null},
+      {"text": "Placeholder Level-1 question 4?", "options": ["Option A", "Option B", "Option C", "Option D", "Option E"], "hint": null},
+      {"text": "Placeholder Level-1 question 5?", "options": ["Option A", "Option B", "Option C", "Option D", "Option E"], "hint": null},
+      {"text": "Placeholder Level-1 question 6?", "options": ["Option A", "Option B", "Option C", "Option D", "Option E"], "hint": null},
+      {"text": "Placeholder Level-1 question 7?", "options": ["Option A", "Option B", "Option C", "Option D", "Option E"], "hint": null},
+      {"text": "Placeholder Level-1 question 8?", "options": ["Option A", "Option B", "Option C", "Option D", "Option E"], "hint": null}
+    ]
+  },
+  "level2": {
+    "name": "Level 2 — Decode the Map",
+    "intro": "Eight short-answer quests — a few words or a single sentence is plenty.",
+    "questions": [
+      {"text": "Placeholder Level-2 question 9?", "hint": null},
+      {"text": "Placeholder Level-2 question 10?", "hint": null},
+      {"text": "Placeholder Level-2 question 11?", "hint": null},
+      {"text": "Placeholder Level-2 question 12?", "hint": null},
+      {"text": "Placeholder Level-2 question 13?", "hint": null},
+      {"text": "Placeholder Level-2 question 14?", "hint": null},
+      {"text": "Placeholder Level-2 question 15?", "hint": null},
+      {"text": "Placeholder Level-2 question 16?", "hint": null}
+    ]
+  },
+  "level3": {
+    "name": "Level 3 — Face the Dragon",
+    "intro": "Four open-ended provocations — hidden assumptions, missing controls, tensions with the wider field.",
+    "questions": [
+      {"text": "Placeholder Level-3 question 17?", "hint": null},
+      {"text": "Placeholder Level-3 question 18?", "hint": null},
+      {"text": "Placeholder Level-3 question 19?", "hint": null},
+      {"text": "Placeholder Level-3 question 20?", "hint": null}
+    ]
+  },
+  "closing": "Found something surprising, delightful, or infuriating? Share it with whoever sent you this paper — half the value of reading closely is the conversation that follows.",
+  "paper_anatomy": {
+    "nodes": {
+      "motiv":  {"kind": "motivation",      "pos": [2, 0],   "label": "One-line open question the paper tackles."},
+      "assum":  {"kind": "assumptions",     "pos": [0, 1.2], "label": "Key assumption(s) the argument rests on."},
+      "flow":   {"kind": "logical_flow",    "pos": [4, 1.2], "label": "The paper's top-level chain of reasoning."},
+      "exp":    {"kind": "experiments",     "pos": [2, 2.4], "label": "Main experiments · separated · by · dots."},
+      "evid":   {"kind": "evidence",        "pos": [2, 3.4], "label": "Top observations that carry the paper."},
+      "supp":   {"kind": "supporting",      "pos": [2, 4.4], "label": "Critical controls/rescues tying evidence to claim."},
+      "interp": {"kind": "interpretations", "pos": [2, 5.4], "label": "Authors' reading of what the data mean."},
+      "impl":   {"kind": "implications",    "pos": [0, 6.6], "label": "What this implies for the wider field."},
+      "concl":  {"kind": "conclusions",     "pos": [4, 6.6], "label": "The bottom-line claim."}
+    },
+    "edges": [
+      ["motiv", "assum", "dashed"],
+      ["motiv", "flow",  "dashed"],
+      ["assum", "exp"],
+      ["flow",  "interp", "dashed"],
+      ["exp",   "evid"],
+      ["evid",  "supp"],
+      ["supp",  "interp"],
+      ["interp","impl"],
+      ["interp","concl"]
+    ]
+  }
+}
