@@ -6,7 +6,7 @@ Custom skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
 
 ### snu-procurement-doc
 
-Automatically generates procurement specification and usage description documents for high-value research equipment purchases at Seoul National University. Given a manufacturer, model, and quantity, it researches specs and tariff codes via web search, then produces two HWPX (Hancom Office) documents ready for submission.
+Generates procurement documents for research equipment purchases at Seoul National University, filling the official HWPX (Hancom Office) forms in place while preserving their formatting. Given a manufacturer, model, and quantity, it researches specifications, competing products, and HSK/government classification codes, then produces the procurement specification (별지 제3호), the usage description (별지 제2호), and an HTML verification report that cross-checks the two against the research purpose. Optionally, it also prepares the research-facility review request (표준지침 별표 4) together with a duplicate-equipment review table built from a ZEUS (zeus.go.kr) survey of comparable instruments already registered on campus. Form editing is done through the kordoc MCP; helper scripts adjust paragraph and table slot counts before filling and render page previews for layout checks.
 
 ### snu-srnd
 
